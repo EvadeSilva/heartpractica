@@ -7,124 +7,102 @@ import joblib
 model = joblib.load("heart_model.pkl")
 scaler = joblib.load("escalador.pkl")
 
-st.set_page_config(page_title="Predicción de Enfermedad Cardíaca", layout="centered")
+st.set_page_config(page_title="Predicción de Enfermedad Cardíaca", layout="centered", page_icon="❤️")
 
-st.title("💖 Predicción de Enfermedad Cardíaca")
-st.markdown(
-    """
-    Esta aplicación predice la probabilidad de que una persona presente una enfermedad cardíaca, 
-    basándose en indicadores clínicos comunes. Llena el formulario con los datos del paciente. 
-    Los valores normales y explicaciones están disponibles en cada campo.
-    """
-)
+st.title("❤️ Predicción de Enfermedad Cardíaca")
+st.markdown("Esta aplicación predice si existe **riesgo de enfermedad cardíaca** basado en exámenes médicos. Los datos ingresados deben ser proporcionados por un profesional de salud.")
 
-st.sidebar.header("📋 Formulario de Datos del Paciente")
+st.header("🔍 Ingresa los datos del paciente:")
 
-# === Formulario (esto siempre se ejecuta) ===
-age = st.sidebar.slider("Edad", 29, 77, 50, help="Edad del paciente. A mayor edad, mayor riesgo.")
-sex = st.sidebar.selectbox("Sexo biológico", ["Femenino", "Masculino"], help="El sexo masculino tiene un riesgo cardiovascular ligeramente mayor.")
+# Diccionarios para explicaciones
+sex_dict = {"Mujer": 0, "Hombre": 1}
+cp_dict = {
+    "Dolor típico anginoso": 0,
+    "Dolor atípico anginoso": 1,
+    "Dolor no anginoso": 2,
+    "Asintomático": 3
+}
+restecg_dict = {
+    "Normal": 0,
+    "Anormalidad ST-T": 1,
+    "Hipertrofia ventricular probable": 2
+}
+slope_dict = {
+    "Pendiente ascendente": 0,
+    "Pendiente plana": 1,
+    "Pendiente descendente": 2
+}
+thal_dict = {
+    "Normal": 1,
+    "Defecto fijo": 2,
+    "Defecto reversible": 3
+}
 
-cp = st.sidebar.selectbox(
-    "Tipo de dolor en el pecho",
-    ["0 = Angina típica", "1 = Angina atípica", "2 = Dolor no anginoso", "3 = Asintomático"],
-    help="Tipo 0: Dolor relacionado con esfuerzo. Tipo 3: No hay síntomas, pero puede haber enfermedad oculta."
-)
+# Entradas del usuario
+age = st.slider("Edad", 29, 77, 50)
+sex = st.selectbox("Sexo", list(sex_dict.keys()))
+cp = st.selectbox("Tipo de dolor en el pecho", list(cp_dict.keys()), help="Ej: Dolor típico anginoso aparece con el esfuerzo físico y se alivia con el reposo.")
+trestbps = st.slider("Presión arterial en reposo (mm Hg)", 90, 200, 120)
+chol = st.slider("Colesterol sérico (mg/dl)", 100, 600, 240)
+fbs = st.radio("¿Glucosa en ayunas > 120 mg/dl?", ["No", "Sí"])
+restecg = st.selectbox("Resultados del electrocardiograma en reposo", list(restecg_dict.keys()))
+thalach = st.slider("Frecuencia cardíaca máxima alcanzada", 70, 210, 150)
+exang = st.radio("¿Angina inducida por ejercicio?", ["No", "Sí"])
+oldpeak = st.slider("Depresión del segmento ST inducida por ejercicio", 0.0, 6.5, 1.0, step=0.1,
+                    help="La depresión ST puede indicar isquemia inducida por ejercicio.")
+slope = st.selectbox("Pendiente del segmento ST", list(slope_dict.keys()))
+ca = st.slider("Número de vasos coloreados (fluoroscopía)", 0, 4, 0)
+thal = st.selectbox("Resultado del test de talasemia", list(thal_dict.keys()), help="La talasemia afecta la sangre y puede influir en la salud cardíaca.")
 
-trestbps = st.sidebar.number_input(
-    "Presión arterial en reposo (mm Hg)",
-    min_value=80, max_value=200, value=120,
-    help="Presión normal: <120 mm Hg. Mayor a eso puede indicar hipertensión."
-)
+# Convertir inputs a valores numéricos
+input_data = pd.DataFrame([[
+    age,
+    sex_dict[sex],
+    cp_dict[cp],
+    trestbps,
+    chol,
+    1 if fbs == "Sí" else 0,
+    restecg_dict[restecg],
+    thalach,
+    1 if exang == "Sí" else 0,
+    oldpeak,
+    slope_dict[slope],
+    ca,
+    thal_dict[thal]
+]], columns=[
+    "age", "sex", "cp", "trestbps", "chol", "fbs",
+    "restecg", "thalach", "exang", "oldpeak", "slope",
+    "ca", "thal"
+])
 
-chol = st.sidebar.number_input(
-    "Colesterol sérico (mg/dL)",
-    min_value=100, max_value=600, value=200,
-    help="Valor normal: <200 mg/dL. Valores elevados son un factor de riesgo importante."
-)
+# Escalar datos
+scaled_input = scaler.transform(input_data)
 
-fbs = st.sidebar.selectbox(
-    "¿Glucemia en ayunas > 120 mg/dL?",
-    ["No", "Sí"],
-    help="La glucosa elevada en ayunas puede indicar diabetes o prediabetes."
-)
-
-restecg = st.sidebar.selectbox(
-    "Electrocardiograma en reposo",
-    ["0 = Normal", "1 = Anomalía onda ST-T", "2 = Hipertrofia ventricular izquierda"],
-    help="El ECG puede mostrar señales de problemas cardíacos incluso sin síntomas."
-)
-
-thalach = st.sidebar.slider(
-    "Frecuencia cardíaca máxima alcanzada",
-    min_value=70, max_value=210, value=150,
-    help="Normal según edad: 220 - edad. Un valor bajo podría indicar un corazón débil."
-)
-
-exang = st.sidebar.selectbox(
-    "¿Dolor en el pecho inducido por ejercicio (angina)?",
-    ["No", "Sí"],
-    help="Indica si el esfuerzo físico causa dolor en el pecho (síntoma común de enfermedad coronaria)."
-)
-
-oldpeak = st.sidebar.slider(
-    "Depresión del ST tras el ejercicio",
-    min_value=0.0, max_value=6.5, value=1.0,
-    help="ST se refiere al segmento ST del electrocardiograma. Su depresión puede indicar isquemia (falta de oxígeno en el músculo cardíaco)."
-)
-
-slope = st.sidebar.selectbox(
-    "Pendiente del segmento ST",
-    ["0 = Descendente", "1 = Plana", "2 = Ascendente"],
-    help="El segmento ST en ECG puede reflejar problemas. Una pendiente descendente suele ser preocupante."
-)
-
-ca = st.sidebar.selectbox(
-    "Número de vasos coloreados por fluoroscopía (0-4)",
-    ["0", "1", "2", "3", "4"],
-    help="Más vasos coloreados indica mayor posibilidad de obstrucción coronaria visible."
-)
-
-thal = st.sidebar.selectbox(
-    "Resultado del estudio de talio (thalassemia)",
-    ["1 = Defecto fijo", "2 = Normal", "3 = Defecto reversible"],
-    help="El defecto reversible sugiere posible obstrucción que mejora con el reposo, lo que puede indicar enfermedad cardíaca."
-)
-
-# === Botón de predicción ===
-if st.sidebar.button("📈 Predecir"):
-    input_dict = {
-        "age": age,
-        "sex": 1 if sex == "Masculino" else 0,
-        "cp": int(cp[0]),
-        "trestbps": trestbps,
-        "chol": chol,
-        "fbs": 1 if fbs == "Sí" else 0,
-        "restecg": int(restecg[0]),
-        "thalach": thalach,
-        "exang": 1 if exang == "Sí" else 0,
-        "oldpeak": oldpeak,
-        "slope": int(slope[0]),
-        "ca": int(ca),
-        "thal": int(thal[0])
-    }
-
-    input_df = pd.DataFrame([input_dict])
-    input_scaled = scaler.transform(input_df)
-
-    prediction = model.predict(input_scaled)[0]
-    probability = model.predict_proba(input_scaled)[0][int(prediction)]
-
-    st.subheader("📊 Resultado del análisis")
+# Botón para predecir
+if st.button("🔎 Predecir"):
+    prediction = model.predict(scaled_input)[0]
+    proba = model.predict_proba(scaled_input)[0][1]  # Probabilidad de clase positiva
 
     if prediction == 1:
-        st.error("🔴 Posible riesgo de enfermedad cardíaca detectado.")
+        st.error(f"❌ El modelo predice que **Sí hay riesgo de enfermedad cardíaca** con una probabilidad del **{proba*100:.2f}%**.")
     else:
-        st.success("🟢 No se detecta riesgo significativo de enfermedad cardíaca.")
+        st.success(f"✅ El modelo predice que **No hay riesgo significativo de enfermedad cardíaca** con una probabilidad del **{(1-proba)*100:.2f}%**.")
 
-    st.markdown(f"**Probabilidad estimada:** {probability:.2%}")
+    # Interpretación adicional
+    st.markdown("### 📌 Recomendaciones generales:")
+    st.markdown("""
+    - Consulta con un **cardiólogo** para confirmar los hallazgos.
+    - Realiza pruebas adicionales como un **ecocardiograma**, **prueba de esfuerzo** o **angiografía**, según evaluación clínica.
+    - Mejora hábitos alimenticios, evita el tabaquismo y realiza actividad física supervisada.
+    - Mantén controlado el colesterol, la glucosa y la presión arterial.
+    """)
 
-    st.info(
-        "Se recomienda realizar un examen clínico completo. "
-        "Estos podrían incluir: **electrocardiograma**, **ecocardiografía**, "
-        "**prueba de esfuerzo** o **análisis de sangre**."
-    )
+    # Información adicional
+    st.markdown("---")
+    st.markdown("### ℹ️ Glosario de términos usados:")
+    st.markdown("""
+    - **ST**: segmento ST en un electrocardiograma, puede indicar daño o estrés cardíaco.
+    - **ca**: número de vasos con anomalías detectadas por fluoroscopía.
+    - **thal**: resultado de la prueba de talasemia, donde "defecto fijo" o "reversible" pueden indicar daño cardíaco previo.
+    - **cp**: tipo de dolor en el pecho. Un dolor típico anginoso es el más relacionado con enfermedad coronaria.
+    """)
