@@ -1,111 +1,66 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-import joblib
+# Formulario para ingresar los datos del paciente
+st.sidebar.header("🔍 Ingresa los datos del paciente")
 
-# Cargar modelo y escalador
-model = joblib.load("heart_model.pkl")
-scaler = joblib.load("escalador.pkl")
+age = st.sidebar.number_input("Edad (en años)", min_value=1, max_value=120,
+                              help="Edad de la persona. Ejemplo: 45")
 
-# Título
-st.title("🫀 Predicción de Enfermedad Cardíaca")
-st.markdown("""
-Esta aplicación permite estimar la probabilidad de enfermedad cardíaca en función de diversos parámetros clínicos.  
-A continuación se presentan definiciones breves de los términos utilizados:
+sex = st.sidebar.selectbox("Sexo", options=[0, 1],
+                           format_func=lambda x: "Mujer" if x == 0 else "Hombre",
+                           help="Selecciona 0 si es Mujer, 1 si es Hombre.")
 
-### 🧠 Glosario rápido:
-- **cp (Chest Pain - Dolor en el pecho)**  
-    - `0`: Asintomático  
-    - `1`: Angina típica  
-    - `2`: Angina atípica  
-    - `3`: Dolor no anginal  
+cp = st.sidebar.selectbox("Tipo de dolor en el pecho", options=[0, 1, 2, 3],
+                          format_func=lambda x: [
+                              "0 - Dolor típico anginoso (relacionado al esfuerzo físico)",
+                              "1 - Dolor atípico anginoso",
+                              "2 - Dolor no anginoso",
+                              "3 - Dolor sin relación con el corazón"
+                          ][x],
+                          help="Tipo de dolor que presenta el paciente.")
 
-- **restecg (Electrocardiograma en reposo)**  
-    - `0`: Normal  
-    - `1`: Anormalidad ST-T (inversión T, elevación ST)  
-    - `2`: Hipertrofia ventricular izquierda  
+trestbps = st.sidebar.number_input("Presión arterial en reposo (mm Hg)", min_value=50, max_value=250,
+                                   help="Presión sistólica medida en reposo. Normal: 90–120 mm Hg.")
 
-- **slope (Pendiente del segmento ST durante el ejercicio)**  
-    - `0`: Descendente  
-    - `1`: Plana  
-    - `2`: Ascendente  
+chol = st.sidebar.number_input("Colesterol sérico (mg/dl)", min_value=100, max_value=600,
+                               help="Nivel de colesterol total en sangre. Normal: menos de 200 mg/dl.")
 
-- **thal (Talassemia)**  
-    - `0`: No disponible  
-    - `1`: Talasemia fija (defecto irreversible)  
-    - `2`: Normal  
-    - `3`: Talasemia reversible (bajo estrés)  
+fbs = st.sidebar.selectbox("¿Glucosa en ayunas > 120 mg/dl?", options=[0, 1],
+                           format_func=lambda x: "No" if x == 0 else "Sí",
+                           help="Indica si la glucosa en ayunas supera los 120 mg/dl.")
 
-- **oldpeak**: Depresión del segmento ST inducida por el ejercicio en relación al reposo.
+restecg = st.sidebar.selectbox("Resultado del ECG en reposo", options=[0, 1, 2],
+                               format_func=lambda x: [
+                                   "0 - Normal",
+                                   "1 - Anomalía en ST-T (posible isquemia)",
+                                   "2 - Hipertrofia ventricular izquierda"
+                               ][x],
+                               help="Resultados del electrocardiograma en reposo.")
 
-""")
+thalach = st.sidebar.number_input("Frecuencia cardíaca máxima alcanzada", min_value=60, max_value=250,
+                                  help="Frecuencia máxima durante esfuerzo. Normal: entre 100 y 190 bpm en adultos.")
 
-# Formulario de ingreso de datos
-st.header("📋 Ingrese los datos del paciente:")
+exang = st.sidebar.selectbox("¿Presenta angina inducida por ejercicio?", options=[0, 1],
+                             format_func=lambda x: "No" if x == 0 else "Sí",
+                             help="Angina provocada por actividad física.")
 
-age = st.slider("Edad", 29, 77, 50)
-sex = st.selectbox("Sexo", [("Hombre", 1), ("Mujer", 0)], format_func=lambda x: x[0])[1]
-cp = st.selectbox("Tipo de dolor en el pecho", [
-    ("Asintomático", 0),
-    ("Angina típica", 1),
-    ("Angina atípica", 2),
-    ("Dolor no anginal", 3)
-], format_func=lambda x: x[0])[1]
+oldpeak = st.sidebar.number_input("Depresión del segmento ST inducida por ejercicio", min_value=0.0, max_value=10.0, step=0.1,
+                                  help="Valor numérico que indica la depresión del ST. Una depresión mayor puede ser señal de enfermedad cardíaca.")
 
-trestbps = st.slider("Presión arterial en reposo (mm Hg)", 90, 200, 120)
-chol = st.slider("Colesterol sérico (mg/dl)", 100, 600, 200)
-fbs = st.selectbox("¿Glucosa en ayunas > 120 mg/dl?", [("Sí", 1), ("No", 0)], format_func=lambda x: x[0])[1]
-restecg = st.selectbox("Resultado del electrocardiograma en reposo", [
-    ("Normal", 0),
-    ("Anormalidad ST-T", 1),
-    ("Hipertrofia ventricular izquierda", 2)
-], format_func=lambda x: x[0])[1]
+slope = st.sidebar.selectbox("Pendiente del ST durante el ejercicio", options=[0, 1, 2],
+                             format_func=lambda x: [
+                                 "0 - Descendente",
+                                 "1 - Plana",
+                                 "2 - Ascendente"
+                             ][x],
+                             help="Pendiente de recuperación del segmento ST durante el esfuerzo.")
 
-thalach = st.slider("Frecuencia cardíaca máxima alcanzada", 70, 210, 150)
-exang = st.selectbox("¿Angina inducida por ejercicio?", [("Sí", 1), ("No", 0)], format_func=lambda x: x[0])[1]
-oldpeak = st.slider("Oldpeak (depresión ST)", 0.0, 6.2, 1.0)
-slope = st.selectbox("Pendiente del segmento ST", [
-    ("Descendente", 0),
-    ("Plana", 1),
-    ("Ascendente", 2)
-], format_func=lambda x: x[0])[1]
+ca = st.sidebar.selectbox("Número de vasos principales vistos con fluoroscopía", options=[0, 1, 2, 3, 4],
+                          help="Cantidad de vasos sanguíneos visibles mediante fluoroscopía. Mayor número puede indicar mayor riesgo.")
 
-ca = st.slider("Número de vasos principales con fluoroscopía (0–3)", 0, 3, 0)
-thal = st.selectbox("Resultado del test de talasemia", [
-    ("No disponible", 0),
-    ("Fijo", 1),
-    ("Normal", 2),
-    ("Reversible", 3)
-], format_func=lambda x: x[0])[1]
+thal = st.sidebar.selectbox("Tipo de talasemia", options=[1, 2, 3],
+                            format_func=lambda x: {
+                                1: "1 - Sin información",
+                                2: "2 - Talasemia normal",
+                                3: "3 - Talasemia reversible"
+                            }[x],
+                            help="Tipo de talasemia detectada en el paciente.")
 
-# Botón de predicción
-if st.button("🧾 Evaluar Riesgo Cardíaco"):
-    input_data = np.array([[age, sex, cp, trestbps, chol, fbs, restecg,
-                            thalach, exang, oldpeak, slope, ca, thal]])
-    
-    input_scaled = scaler.transform(input_data)
-    prediction = model.predict(input_scaled)[0]
-    probability = model.predict_proba(input_scaled)[0][1]
-
-    if prediction == 1:
-        st.error(f"🔴 El modelo predice **presencia de enfermedad cardíaca** con una probabilidad de {probability:.2%}.")
-        st.markdown("""
-        ### 🧬 Recomendaciones sugeridas:
-        - Consulta médica urgente con un cardiólogo.
-        - Evaluación con pruebas como ecocardiograma, prueba de esfuerzo o angiografía coronaria.
-        - Cambios en el estilo de vida: dieta, ejercicio y control del estrés.
-
-        """)
-    else:
-        st.success(f"🟢 El modelo predice **ausencia de enfermedad cardíaca** con una probabilidad de {(1 - probability):.2%}.")
-        st.markdown("""
-        ### ✅ Recomendaciones sugeridas:
-        - Mantener hábitos saludables.
-        - Revisiones periódicas.
-        - Continuar monitoreando factores de riesgo si existen antecedentes familiares.
-
-        """)
-
-# Pie de página
-st.markdown("---")
-st.caption("📊 Basado en modelo Random Forest entrenado con el dataset 'heart-disease'. Esta herramienta no reemplaza una evaluación médica profesional.")
