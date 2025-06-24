@@ -3,7 +3,7 @@ import pandas as pd
 import joblib
 
 # Cargar modelo y scaler
-model = joblib.load("modelo_entrenado.pkl")
+model = joblib.load("heart_model.pkl")
 scaler = joblib.load("escalador.pkl")
 
 # Diccionarios de traducción
