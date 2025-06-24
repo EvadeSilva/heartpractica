@@ -20,7 +20,7 @@ st.markdown(
 
 st.sidebar.header("📋 Formulario de Datos del Paciente")
 
-# === Formulario ===
+# === Formulario (esto siempre se ejecuta) ===
 age = st.sidebar.slider("Edad", 29, 77, 50, help="Edad del paciente. A mayor edad, mayor riesgo.")
 sex = st.sidebar.selectbox("Sexo biológico", ["Femenino", "Masculino"], help="El sexo masculino tiene un riesgo cardiovascular ligeramente mayor.")
 
@@ -69,7 +69,7 @@ exang = st.sidebar.selectbox(
 oldpeak = st.sidebar.slider(
     "Depresión del ST tras el ejercicio",
     min_value=0.0, max_value=6.5, value=1.0,
-    help="Mide cambios en el electrocardiograma tras el ejercicio. Valores >1.0 pueden indicar isquemia (falta de oxígeno en el corazón)."
+    help="ST se refiere al segmento ST del electrocardiograma. Su depresión puede indicar isquemia (falta de oxígeno en el músculo cardíaco)."
 )
 
 slope = st.sidebar.selectbox(
@@ -90,7 +90,7 @@ thal = st.sidebar.selectbox(
     help="El defecto reversible sugiere posible obstrucción que mejora con el reposo, lo que puede indicar enfermedad cardíaca."
 )
 
-# ==== Botón de predicción ====
+# === Botón de predicción ===
 if st.sidebar.button("📈 Predecir"):
     input_dict = {
         "age": age,
