@@ -5,7 +5,7 @@ import numpy as np
 
 # Cargar modelo y escalador
 model = joblib.load("heart_model.pkl")
-scaler = joblib.load("scaler.pkl")  # Asegúrate de tener este archivo
+scaler = joblib.load("escalador.pkl")  # Asegúrate de tener este archivo
 
 # Configuración de la página
 st.set_page_config(page_title="Predicción de Enfermedad Cardíaca", layout="centered", page_icon="❤️")
