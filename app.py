@@ -81,4 +81,3 @@ if st.button("📊 Predecir"):
         st.success("✅ Riesgo de enfermedad cardíaca detectado. Se recomienda atención médica especializada.")
     else:
         st.info("🫶 No se detecta riesgo significativo de enfermedad cardíaca. Mantener hábitos saludables.")
-
